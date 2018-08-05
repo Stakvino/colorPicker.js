@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="src/css/style.css">
+    <title>Color picker js</title>
+</head>
+
+<body>
+<canvas width="1200" height="600" id="test"></canvas>
+<div class="color-input">
+  <div class="close-block"><button type="button" class="close-but">&#x2715;</button></div>
+  <div class="hue-block">
+   <canvas width="360" height="30" id="hue_canvas"></canvas>
+  </div>
+  <div class="sl-block">
+   <canvas width="200" height="200" id="sl_canvas"></canvas>
+   <canvas width="30" height="200" id="opacity_canvas"></canvas>
+  </div>
+  <input type="text" class="color-code">
+  <div class="selected-color"></div>
+  <div class="controls-buttons">
+    <div class="conversion-buttons">
+      <button type="button" class="hex-but">HEX</button>
+      <button type="button" class="hsla-but">HSLA</button>
+      <button type="button" class="rgba-but">RGBA</button>
+    </div>
+    <div class="cancel-select">
+      <button type="button" class="cancel-but">Cancel</button>
+      <button type="button" class="select-but">Select</button>
+    </div>
+  </div>
+</div>
+
+<input type="color"></input>    
+<script src="src/js/script.js"></script>    
+</body>
+
+</html>
