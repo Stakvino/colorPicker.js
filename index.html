@@ -9,38 +9,10 @@
 </head>
 
 <body>
-<input type="range">
-<div class="color-input">
-  <div class="close-block"><button type="button" class="close-but">&#x2715;</button></div>
-  <div class="main-block">
-    <div class="hue-block">
-     <canvas width="360" height="20" id="hue_canvas"></canvas>
-     <div class="slider-button" id="hue_slider_button"></div>
-    </div>
-    <div class="sl-opacity">
-     <canvas width="200" height="200" id="sl_canvas"></canvas>
-     <div class="opacity-block">
-        <canvas width="20" height="200" id="opacity_canvas"></canvas>
-        <div class="slider-button" id="opacity_slider_button"></div>
-     </div>
-    </div>
 
-    <input type="text" class="color-code">
-    <div class="selected-color"></div>
-    <div class="conversion-buttons">
-      <button type="button" class="hex-but">HEX</button>
-      <button type="button" class="hsla-but">HSLA</button>
-      <button type="button" class="rgba-but">RGBA</button>
-    </div>
-    <div class="cancel-select">
-      <button type="button" class="cancel-but">Cancel</button>
-      <button type="button" class="select-but">Select</button>
-    </div>
-  </div>
-</div>
+<button type="button" id="choose_color">Choose a color</button>
 
-<input type="color"></input>    
-<script src="src/js/main.js"></script>    
+<script src="src/js/color-picker.js"></script>    
 </body>
 
 </html>

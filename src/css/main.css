@@ -1,32 +1,40 @@
 .hex-letter-spacing{
   letter-spacing: 3px;
 }
-div.color-input{
+.show{
+  display: default;
+}
+.hide{
+  display: none;
+}
+div.color-picker-js{
   border: black solid 1px;
   background-color: #4285f4;
   position: absolute;
   top: 100px;
   left: 100px;
 }
-div.main-block{
-  background-color: white;
-  margin: 10px;
-  padding: 10px;
+div.close-block{
+  padding: 8px 0;
 }
 button.close-but{
   position: relative;
   left: 90%;
-  top: 4px;
-  padding: 2px 5px;
+  padding: 0 5px;
+}
+div.main-block{
+  background-color: white;
+  margin: 0 10px 10px 10px;
+  padding: 10px;
 }
 div.hue-block{
   width: 362px;
   margin: 0 13px 20px 13px;
   position: relative;
 }
-canvas#hue_canvas,
-canvas#sl_canvas,
-canvas#opacity_canvas
+canvas.hue-canvas,
+canvas.sl-canvas,
+canvas.opacity-canvas
 {
   border: black solid 1px;
 }
@@ -39,7 +47,7 @@ div.slider-button{
 div.slider-button:hover{
   cursor: pointer;
 }
-div#hue_slider_button{
+div.hue-slider-button{
   width: 26px;
   height: 26px;
   top: -3px;
@@ -56,7 +64,7 @@ div.opacity-block{
   margin-left: 70px;
   position: relative;
 }
-div#opacity_slider_button{
+div.opacity-slider-button{
   width: 26px;
   height: 26px;
   top: 187px;
@@ -74,14 +82,12 @@ div.selected-color{
   height: 50px;
   border: black solid 1px;
   display: inline-block;
-  margin-top: 45px;
+  margin-top: 50px;
   position: absolute;
   left: 300px;
-  background-color: hsl(0,50%,50%);
 }
 div.conversion-buttons{
   margin: 15px 0 0 20px;
-  
 }
 div.conversion-buttons button{
   background-color: #4285f4;
@@ -89,19 +95,19 @@ div.conversion-buttons button{
   padding: .2em .4em;
   color: white;
 }
-div.conversion-buttons button:not([class="rgba-but"]){
+div.conversion-buttons button:not(:last-child){
   margin-right: 1em;
 }
 div.conversion-buttons button:hover{
   cursor: pointer;
 }
 div.cancel-select{
-  margin: 2em 0 .5em 0;
+  margin: 2.5em 0 .5em 0;
 }
 div.cancel-select button{
   font-size: 1.1em;
   padding: .1em .4em;
 }
-button.cancel-but{
-  margin: 0 10px 0 200px;
+div.cancel-select button.cancel-but{
+  margin: 0 10px 0 210px;
 }
