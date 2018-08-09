@@ -8,9 +8,15 @@ class ColorPicker{
     this.slCtx    = this.slCanvas.getContext("2d");
     /*********************************************************************************/
     this.selectedColorSquare = this.mainBlock.getElementsByClassName("selected-color")[0];
+    this.colorCodeInput = this.mainBlock.getElementsByClassName("color-code")[0];
     let hexColor  = `#000000`;
+    const rHex = /^#[0-9a-fA-F]{6}$/;
     let hslaColor = `hsla(0, 0%, 0%, 1)`;
+    const rHsla = /^hsla\((\d{1,3}),(\d{1,3})%*,(\d{1,3})%*,(0*\.\d|1(\.\d)*)\)/;
+    const rHsl = /^hsl\((\d{1,3}),(\d{1,3})%*,(\d{1,3})%*\)/;
     let rgbaColor = `rgba(0, 0, 0, 1)`;
+    const rRgba = /^rgba\((\d{1,3}),(\d{1,3}),(\d{1,3}),(0*\.\d|1(\.\d)*)\)/;
+    const rRgb  = /^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)/;
     
     this.selectedColor = {
       get hex(){
@@ -18,6 +24,9 @@ class ColorPicker{
       },
       get hsla(){
         return hslaColor;
+      },
+      set hsla(value){
+        hslaColor = value;
       },
       get rgba(){
         return rgbaColor;
@@ -45,12 +54,13 @@ class ColorPicker{
        <canvas width="360" height="20" class="hue-canvas"></canvas>
        <div class="slider-button hue-slider-button"></div>
       </div>
-      <div class="sl-opacity">
+      <div class="sl-block">
        <canvas width="200" height="200" class="sl-canvas"></canvas>
-       <div class="opacity-block">
-          <canvas width="20" height="200" class="opacity-canvas"></canvas>
-          <div class="slider-button opacity-slider-button"></div>
-       </div>
+       <div class="sl-cursor"></div>
+      </div>
+      <div class="opacity-block">
+        <canvas width="20" height="200" class="opacity-canvas"></canvas>
+        <div class="slider-button opacity-slider-button"></div>
       </div>
       <input type="text" class="color-code">
       <div class="selected-color"></div>
@@ -158,6 +168,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       hueSliderBut.style.left = `${newHueValue - halfSliderSize}px`;
       this.selectedHue = newHueValue;
       this.fillSlSquare();
+      this.fillSelectedColorSquare();
       mouseLastPosition.x = e.pageX;
     }
   });
@@ -172,7 +183,8 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     if(newLeftPosition >= 0 && newLeftPosition <= 360){
       hueSliderBut.style.left = `${newLeftPosition - halfSliderSize}px`;
       this.selectedHue = newLeftPosition;
-      this.fillSlSquare(); 
+      this.fillSlSquare();
+      this.fillSelectedColorSquare();
     }
   });
   /***********************************************************************************/
@@ -194,12 +206,13 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       if(newOpacityValue < 0){
         newOpacityValue = 0;
       }
-      if(newOpacityValue > 200){
-        newOpacityValue = 200;
+      if(newOpacityValue > this.opacityCanvas.height){
+        newOpacityValue = this.opacityCanvas.height;
       }
       opacitySliderBut.style.top = `${newOpacityValue - halfSliderSize}px`;
-      this.selectedOpacity = newOpacityValue/200;
+      this.selectedOpacity = Number( (newOpacityValue/this.opacityCanvas.height).toPrecision(2) );
       this.fillSlSquare();
+      this.fillSelectedColorSquare();
       mouseLastPosition.y = e.pageY;
     }
   });
@@ -211,32 +224,103 @@ ColorPicker.prototype.AttachEventHandlers = function(){
 
     const opacityCanvasPosition = this.opacityCanvas.getClientRects()[0].y;
     const newTopPosition = e.pageY - opacityCanvasPosition;
-    if(newTopPosition >= 0 && newTopPosition <= 360){
+    if(newTopPosition >= 0 && newTopPosition <= this.opacityCanvas.height){
       opacitySliderBut.style.top = `${newTopPosition - halfSliderSize}px`;
-      this.selectedOpacity = newTopPosition/200;
-      this.fillSlSquare(); 
+      this.selectedOpacity = newTopPosition/this.opacityCanvas.height;
+      this.fillSlSquare();
+      this.fillSelectedColorSquare();
     }
   });
   /***********************************************************************************/
+  //opacity cursor event handler
+  const slCursor = this.mainBlock.getElementsByClassName("sl-cursor")[0];
+  const halfSlCursorSize = 5;
+  let slCursorClicked = false;
+  slCursor.addEventListener("mousedown", () => slCursorClicked = true );
+  addEventListener("mouseup", () => slCursorClicked = false );
   let slCanvasClicked = false;
-  //clicking on the sl canvas will change the saturation and lightness of the color
+  //clicking on the sl canvas will change the saturation and lightness of the color and sl canvas cursor position
   this.slCanvas.addEventListener("mousedown", (e) => {
     e.preventDefault();
     mouseLastPosition.x = null;
     mouseLastPosition.y = null;
     slCanvasClicked = true;
 
-    this.selectedSaturation = (e.pageX - this.getClientRects()[0].x)/2;
-    this.selectedLightness  = 100 - (e.pageY - this.getClientRects()[0].y)/2;
+    this.selectedSaturation = (e.pageX - this.slCanvas.getClientRects()[0].x)/2;
+    this.selectedLightness  = 100 - (e.pageY - this.slCanvas.getClientRects()[0].y)/2;
+    
+    if(this.selectedLightness > 50){
+      slCursor.style.borderColor = "black";
+    }
+    else{
+      slCursor.style.borderColor = "white";
+    }
+    this.fillSelectedColorSquare();
+    
+    //change cursor position in sl canvas
+    const slCanvasClientRect = this.slCanvas.getClientRects()[0];
+    const xPosition = e.pageX - slCanvasClientRect.x;
+    const yPosition = e.pageY - slCanvasClientRect.y;
+    slCursor.style.left = `${xPosition - halfSlCursorSize}px`;
+    slCursor.style.top  = `${yPosition - halfSlCursorSize}px`;
   });
 
   addEventListener("mouseup", () => slCanvasClicked = false );
 
-  this.slCanvas.addEventListener("mousemove", (e) => {
-    if(slCanvasClicked){
-      this.selectedSaturation = (e.pageX - this.getClientRects()[0].x)/2;
-      this.selectedLightness  = 100 - (e.pageY - this.getClientRects()[0].y)/2;
+  addEventListener("mousemove", (e) => {
+    if(slCanvasClicked || slCursorClicked){
+      let newSaturation = (e.pageX - this.slCanvas.getClientRects()[0].x)/2;
+      let newLightness  = 100 - (e.pageY - this.slCanvas.getClientRects()[0].y)/2;
+
+      if(newSaturation < 0){
+        newSaturation = 0;
+      }
+      if(newSaturation > 100){
+        newSaturation = 100;
+      }
+      if(newLightness < 0){
+        newLightness = 0;
+      }
+      if(newLightness > 100){
+        newLightness = 100;
+      }
+
+      this.selectedSaturation = newSaturation;
+      this.selectedLightness  = newLightness;
+      
+      if(this.selectedLightness > 50){
+        slCursor.style.borderColor = "black";
+      }
+      else{
+        slCursor.style.borderColor = "white";
+      }
+      this.fillSelectedColorSquare();
+      
+      //change cursor position in sl canvas
+      const slCanvasClientRect = this.slCanvas.getClientRects()[0];
+      let xPosition = e.pageX - slCanvasClientRect.x;
+      let yPosition = e.pageY - slCanvasClientRect.y;
+      if(xPosition < 0){
+        xPosition = 0;
+      }
+      if(xPosition > this.slCanvas.width){
+        xPosition = this.slCanvas.width;
+      }
+      if(yPosition < 0){
+        yPosition = 0;
+      }
+      if(yPosition > this.slCanvas.height){
+        yPosition = this.slCanvas.height;
+      }
+      slCursor.style.left = `${xPosition - halfSlCursorSize}px`;
+      slCursor.style.top  = `${yPosition - halfSlCursorSize}px`;
     }
+  });
+  /***********************************************************************************/
+  
+  //slCursor.addEventListener("mousedown", () => )
+  this.slCanvas.addEventListener("mousedown", (e) => {
+    
   });
 }
 
@@ -259,6 +343,8 @@ ColorPicker.prototype.fillSlSquare = function(){
 }
 
 ColorPicker.prototype.fillSelectedColorSquare = function(){
+  this.selectedColor.hsla = `hsla(${this.selectedHue}, ${this.selectedSaturation}%, ${this.selectedLightness}%, ${this.selectedOpacity})`;
+  this.colorCodeInput.value = this.selectedColor.hsla;
   this.selectedColorSquare.style.backgroundColor = this.selectedColor.hsla;
 }
 
