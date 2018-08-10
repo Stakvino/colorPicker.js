@@ -3,33 +3,42 @@ class ColorPicker{
     this.mainBlock = this.create();
     /*********************************************************************************/
     this.hueCanvas = this.mainBlock.getElementsByClassName("hue-canvas")[0];
+    this.hueSliderBut = this.mainBlock.getElementsByClassName("hue-slider-button")[0];
     this.opacityCanvas = this.mainBlock.getElementsByClassName("opacity-canvas")[0];
+    this.opacitySliderBut = this.mainBlock.getElementsByClassName("opacity-slider-button")[0];
     this.slCanvas = this.mainBlock.getElementsByClassName("sl-canvas")[0];
+    this.slCursor = this.mainBlock.getElementsByClassName("sl-cursor")[0];
     this.slCtx    = this.slCanvas.getContext("2d");
+    
     /*********************************************************************************/
     this.selectedColorSquare = this.mainBlock.getElementsByClassName("selected-color")[0];
     this.colorCodeInput = this.mainBlock.getElementsByClassName("color-code")[0];
-    let hexColor  = `#000000`;
+    
+    let hexColor = `#000000`;
     const rHex = /^#[0-9a-fA-F]{6}$/;
+    
     let hslaColor = `hsla(0, 0%, 0%, 1)`;
-    const rHsla = /^hsla\((\d{1,3}),(\d{1,3})%*,(\d{1,3})%*,(0*\.\d|1(\.\d)*)\)/;
-    const rHsl = /^hsl\((\d{1,3}),(\d{1,3})%*,(\d{1,3})%*\)/;
+    const rHsla = /^hsla\((\d{1,3}(\.\d+)?),(\d{1,3}(\.\d+)?)%*,(\d{1,3}(\.\d+)?)%*,(0|0?(\.\d+)|1(\.\d+)?)\)/;
+    const rHsl = /^hsl\((\d{1,3}(\.\d+)?),(\d{1,3}(\.\d+)?)%*,(\d{1,3}(\.\d+)?)%*\)/;
+    
     let rgbaColor = `rgba(0, 0, 0, 1)`;
-    const rRgba = /^rgba\((\d{1,3}),(\d{1,3}),(\d{1,3}),(0*\.\d|1(\.\d)*)\)/;
+    const rRgba = /^rgba\((\d{1,3}),(\d{1,3}),(\d{1,3}),(0|0?(\.\d\d?)|1(\.\d\d?)?)\)/;
     const rRgb  = /^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)/;
     
+    const rDigit = /\d/;
+    
     this.selectedColor = {
-      get hex(){
-        return hexColor;
+      hsla : {
+        str   : `hsla(0, 0%, 0%, 1)`,
+        array : [0, 0, 0, 1]
       },
-      get hsla(){
-        return hslaColor;
+      rgba : {
+        str   : `rgba(0, 0, 0, 1)`,
+        array : [0, 0, 0, 1]
       },
-      set hsla(value){
-        hslaColor = value;
-      },
-      get rgba(){
-        return rgbaColor;
+      hex  : {
+        str   : `#000000`,
+        array : [0, 0, 0]
       }
     };
     /*********************************************************************************/
@@ -40,6 +49,14 @@ class ColorPicker{
     /*********************************************************************************/
     this.init();
     this.AttachEventHandlers();
+  }
+  
+  get halfSliderSize(){
+    return this.hueSliderBut.clientWidth/2;
+  } 
+  
+  get halfSlCursorSize(){
+    return this.slCursor.clientWidth/2;
   }
   
   create(){
@@ -112,9 +129,9 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   const closeButton  = this.mainBlock.getElementsByClassName("close-but")[0];
   const cancelButton = this.mainBlock.getElementsByClassName("cancel-but")[0];
   const selectButton = this.mainBlock.getElementsByClassName("select-but")[0];
-  closeButton.addEventListener("click", () => this.mainBlock.classList.add("hide") );
-  cancelButton.addEventListener("click", () => this.mainBlock.classList.add("hide") );
-  selectButton.addEventListener("click", () => this.mainBlock.classList.add("hide") );
+  closeButton.addEventListener("click", () => this.hide() );
+  cancelButton.addEventListener("click", () => this.hide() );
+  selectButton.addEventListener("click", () => this.hide() );
   /***********************************************************************************/
   let mouseLastPosition = {x : null, y : null};
   
@@ -144,11 +161,9 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   });
   /***********************************************************************************/
   //hue slider event handler
-  const halfSliderSize = 13;
-  const hueSliderBut = this.mainBlock.getElementsByClassName("hue-slider-button")[0];
   let hueSliderClicked = false;
 
-  hueSliderBut.addEventListener( "mousedown", (e) => {
+  this.hueSliderBut.addEventListener( "mousedown", (e) => {
     e.preventDefault();
     mouseLastPosition.x = null;
     hueSliderClicked = true;
@@ -159,14 +174,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     if(hueSliderClicked){
       const distanceMoved = e.pageX - (mouseLastPosition.x || e.pageX);
       let newHueValue = this.selectedHue + distanceMoved;
-      if(newHueValue < 0){
-        newHueValue = 0;
-      }
-      if(newHueValue > 360){
-        newHueValue = 360;
-      }
-      hueSliderBut.style.left = `${newHueValue - halfSliderSize}px`;
-      this.selectedHue = newHueValue;
+      this.moveHueSlider(newHueValue);
       this.fillSlSquare();
       this.fillSelectedColorSquare();
       mouseLastPosition.x = e.pageX;
@@ -179,20 +187,16 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     hueSliderClicked = true;
 
     const hueCanvasPosition = this.hueCanvas.getClientRects()[0].x;
-    const newLeftPosition = e.pageX - hueCanvasPosition;
-    if(newLeftPosition >= 0 && newLeftPosition <= 360){
-      hueSliderBut.style.left = `${newLeftPosition - halfSliderSize}px`;
-      this.selectedHue = newLeftPosition;
-      this.fillSlSquare();
-      this.fillSelectedColorSquare();
-    }
+    const newHueValue = e.pageX - hueCanvasPosition;
+    this.moveHueSlider(newHueValue);
+    this.fillSlSquare();
+    this.fillSelectedColorSquare();
   });
   /***********************************************************************************/
   //opacity slider event handler
-  const opacitySliderBut = this.mainBlock.getElementsByClassName("opacity-slider-button")[0];
   let opacitySliderClicked = false;
 
-  opacitySliderBut.addEventListener( "mousedown", (e) => {
+  this.opacitySliderBut.addEventListener( "mousedown", (e) => {
     e.preventDefault();
     mouseLastPosition.y = null;
     opacitySliderClicked = true;
@@ -202,15 +206,8 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   addEventListener("mousemove", (e) => {
     if(opacitySliderClicked){
       const distanceMoved = e.pageY - (mouseLastPosition.y || e.pageY);
-      let newOpacityValue = (this.selectedOpacity * this.opacityCanvas.height) + distanceMoved;
-      if(newOpacityValue < 0){
-        newOpacityValue = 0;
-      }
-      if(newOpacityValue > this.opacityCanvas.height){
-        newOpacityValue = this.opacityCanvas.height;
-      }
-      opacitySliderBut.style.top = `${newOpacityValue - halfSliderSize}px`;
-      this.selectedOpacity = Number( (newOpacityValue/this.opacityCanvas.height).toPrecision(2) );
+      let newOpacityValue = this.selectedOpacity + (distanceMoved/200);
+      this.moveOpacitySlider(newOpacityValue);
       this.fillSlSquare();
       this.fillSelectedColorSquare();
       mouseLastPosition.y = e.pageY;
@@ -223,20 +220,15 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     opacitySliderClicked = true;
 
     const opacityCanvasPosition = this.opacityCanvas.getClientRects()[0].y;
-    const newTopPosition = e.pageY - opacityCanvasPosition;
-    if(newTopPosition >= 0 && newTopPosition <= this.opacityCanvas.height){
-      opacitySliderBut.style.top = `${newTopPosition - halfSliderSize}px`;
-      this.selectedOpacity = newTopPosition/this.opacityCanvas.height;
-      this.fillSlSquare();
-      this.fillSelectedColorSquare();
-    }
+    const newOpacityValue = (e.pageY - opacityCanvasPosition)/200;
+    this.moveOpacitySlider(newOpacityValue);
+    this.fillSlSquare();
+    this.fillSelectedColorSquare();
   });
   /***********************************************************************************/
-  //opacity cursor event handler
-  const slCursor = this.mainBlock.getElementsByClassName("sl-cursor")[0];
-  const halfSlCursorSize = 5;
+  //sl cursor event handler
   let slCursorClicked = false;
-  slCursor.addEventListener("mousedown", () => slCursorClicked = true );
+  this.slCursor.addEventListener("mousedown", () => slCursorClicked = true );
   addEventListener("mouseup", () => slCursorClicked = false );
   let slCanvasClicked = false;
   //clicking on the sl canvas will change the saturation and lightness of the color and sl canvas cursor position
@@ -245,85 +237,88 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     mouseLastPosition.x = null;
     mouseLastPosition.y = null;
     slCanvasClicked = true;
-
-    this.selectedSaturation = (e.pageX - this.slCanvas.getClientRects()[0].x)/2;
-    this.selectedLightness  = 100 - (e.pageY - this.slCanvas.getClientRects()[0].y)/2;
-    
-    if(this.selectedLightness > 50){
-      slCursor.style.borderColor = "black";
-    }
-    else{
-      slCursor.style.borderColor = "white";
-    }
-    this.fillSelectedColorSquare();
     
     //change cursor position in sl canvas
     const slCanvasClientRect = this.slCanvas.getClientRects()[0];
-    const xPosition = e.pageX - slCanvasClientRect.x;
-    const yPosition = e.pageY - slCanvasClientRect.y;
-    slCursor.style.left = `${xPosition - halfSlCursorSize}px`;
-    slCursor.style.top  = `${yPosition - halfSlCursorSize}px`;
+    const saturation = (e.pageX - slCanvasClientRect.x)/2;
+    const lightness = 100 - (e.pageY - slCanvasClientRect.y)/2;
+    this.moveSlCursor(saturation, lightness);
+    this.fillSelectedColorSquare();
   });
 
   addEventListener("mouseup", () => slCanvasClicked = false );
 
   addEventListener("mousemove", (e) => {
     if(slCanvasClicked || slCursorClicked){
-      let newSaturation = (e.pageX - this.slCanvas.getClientRects()[0].x)/2;
-      let newLightness  = 100 - (e.pageY - this.slCanvas.getClientRects()[0].y)/2;
-
-      if(newSaturation < 0){
-        newSaturation = 0;
-      }
-      if(newSaturation > 100){
-        newSaturation = 100;
-      }
-      if(newLightness < 0){
-        newLightness = 0;
-      }
-      if(newLightness > 100){
-        newLightness = 100;
-      }
-
-      this.selectedSaturation = newSaturation;
-      this.selectedLightness  = newLightness;
-      
-      if(this.selectedLightness > 50){
-        slCursor.style.borderColor = "black";
-      }
-      else{
-        slCursor.style.borderColor = "white";
-      }
-      this.fillSelectedColorSquare();
-      
       //change cursor position in sl canvas
       const slCanvasClientRect = this.slCanvas.getClientRects()[0];
-      let xPosition = e.pageX - slCanvasClientRect.x;
-      let yPosition = e.pageY - slCanvasClientRect.y;
-      if(xPosition < 0){
-        xPosition = 0;
-      }
-      if(xPosition > this.slCanvas.width){
-        xPosition = this.slCanvas.width;
-      }
-      if(yPosition < 0){
-        yPosition = 0;
-      }
-      if(yPosition > this.slCanvas.height){
-        yPosition = this.slCanvas.height;
-      }
-      slCursor.style.left = `${xPosition - halfSlCursorSize}px`;
-      slCursor.style.top  = `${yPosition - halfSlCursorSize}px`;
+      const saturation = (e.pageX - slCanvasClientRect.x)/2;
+      const lightness = 100 - (e.pageY - slCanvasClientRect.y)/2;
+      this.moveSlCursor(saturation, lightness);
+      this.fillSelectedColorSquare();
     }
   });
   /***********************************************************************************/
-  
-  //slCursor.addEventListener("mousedown", () => )
-  this.slCanvas.addEventListener("mousedown", (e) => {
-    
+  this.colorCodeInput.addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){
+      this.colorCodeInput.value = this.setColorFromInput();
+      this.fillSlSquare();
+      this.fillSelectedColorSquare();
+    }
   });
 }
+/***********************************************************************************/
+ColorPicker.prototype.setColorFromInput = function(){
+  let value = this.colorCodeInput.value;
+  const hslaArray = [];
+  for(let i = 0; i < 4; i++){
+    const match = value.match(/\d/);
+    if(match){
+      const digitIndex = match.index;
+      value = value.slice(digitIndex);
+      hslaArray.push( parseFloat(value) );
+      value = value.slice(hslaArray[i].toString().length);
+    }
+  }
+  let hue = hslaArray[0];
+  let saturation = hslaArray[1];
+  let lightness  = hslaArray[2];
+  let opacity = hslaArray[3];
+  
+  if(hue < 0){
+    hue = 360 + (hue%360)
+  }
+  else if(hue > 360){
+    hue = hue%360;
+  }
+  if(saturation < 0 || saturation === undefined){
+    saturation = 0;
+  }
+  else if(saturation > 100){
+    saturation = 100;
+  }
+  if(lightness < 0 || lightness === undefined){
+    lightness = 0;
+  }
+  else if(lightness > 100){
+    lightness = 100;
+  }
+  if(opacity < 0 || opacity === undefined){
+    opacity = 0;
+  }
+  else if(opacity > 1){
+    opacity = 1;
+  }
+  this.selectedColor.hsla.str = `hsla(${hue || 0}, ${saturation}%, ${lightness}%, ${opacity })`;
+  this.selectedColor.hsla.array = hslaArray.slice();
+  
+  this.moveHueSlider(hue);
+  this.moveSlCursor(saturation, lightness);
+  this.moveOpacitySlider(opacity);
 
+  return this.selectedColor.hsla.str;
+}
+/***********************************************************************************/
 /*a function that fills the sl canvas with all values from 0 to 100% of saturation and lightness using the selected hue and opacity*/
 ColorPicker.prototype.fillSlSquare = function(){
   //the size of the square that represent a single color in the sl canvas
@@ -341,17 +336,73 @@ ColorPicker.prototype.fillSlSquare = function(){
     }
   }
 }
-
+/***********************************************************************************/
 ColorPicker.prototype.fillSelectedColorSquare = function(){
-  this.selectedColor.hsla = `hsla(${this.selectedHue}, ${this.selectedSaturation}%, ${this.selectedLightness}%, ${this.selectedOpacity})`;
-  this.colorCodeInput.value = this.selectedColor.hsla;
-  this.selectedColorSquare.style.backgroundColor = this.selectedColor.hsla;
+  this.selectedColor.hsla.str = `hsla(${this.selectedHue}, ${this.selectedSaturation}%, ${this.selectedLightness}%, ${this.selectedOpacity})`;
+  this.colorCodeInput.value = this.selectedColor.hsla.str;
+  this.selectedColorSquare.style.backgroundColor = this.selectedColor.hsla.str;
 }
-
-
+/***********************************************************************************/
+ColorPicker.prototype.show = function(){
+  this.mainBlock.classList.remove("hide");
+}
+ColorPicker.prototype.hide = function(){
+  this.mainBlock.classList.add("hide");
+}
+/***********************************************************************************/
+ColorPicker.prototype.moveHueSlider = function(hue){
+  if(hue < 0){
+    hue = 0;
+  }
+  else if(hue > 360){
+    hue = 360;
+  }
+  this.selectedHue = hue;
+  const leftPosition = this.selectedHue - this.halfSliderSize;
+  this.hueSliderBut.style.left = `${leftPosition}px`;
+}
+/***********************************************************************************/
+ColorPicker.prototype.moveOpacitySlider = function(opacity){
+  if(opacity < 0){
+    opacity = 0;
+  }
+  else if(opacity > 1){
+    opacity = 1;
+  }
+  this.selectedOpacity = Number( opacity.toFixed(2) );
+  const topPosition = (this.selectedOpacity * this.opacityCanvas.height) - this.halfSliderSize;
+  this.opacitySliderBut.style.top = `${topPosition}px`;
+}
+/***********************************************************************************/
+ColorPicker.prototype.moveSlCursor = function(saturation, lightness){
+  if(saturation < 0){
+    saturation = 0;
+  }
+  else if(saturation > 100){
+    saturation = 100;
+  }
+  if(lightness < 0){
+    lightness = 0;
+  }
+  else if(lightness > 100){
+    lightness = 100;
+  }
+  this.selectedSaturation = saturation;
+  this.selectedLightness  = lightness;
+  if(this.selectedLightness > 20){
+    this.slCursor.style.borderColor = "black";
+  }
+  else{
+    this.slCursor.style.borderColor = "white";
+  }
+  const leftPosition = (this.selectedSaturation * 2) - this.halfSlCursorSize;
+  const topPosition = ( (100 - this.selectedLightness) * 2 ) - this.halfSlCursorSize;
+  this.slCursor.style.left = `${leftPosition}px`;
+  this.slCursor.style.top  = `${topPosition}px`;
+}
+/***********************************************************************************/
 const chooseColorBut = document.getElementById("choose_color");
 const colorPicker = new ColorPicker();
 chooseColorBut.addEventListener("click", () => {
-  colorPicker.mainBlock.classList.remove("hide");
+  colorPicker.show();
 });
-
