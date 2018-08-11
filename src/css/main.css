@@ -110,10 +110,14 @@ div.conversion-buttons{
   margin: 15px 0 0 20px;
 }
 div.conversion-buttons button{
-  background-color: #4285f4;
   font-size: 1em;
   padding: .2em .4em;
+  border-radius: 5px;
+}
+div.conversion-buttons button.selected-color-code{
+  background-color: #4285f4;
   color: white;
+  border: hsl(243, 94.5%, 67.5%) solid 1px;
 }
 div.conversion-buttons button:not(:last-child){
   margin-right: 1em;
