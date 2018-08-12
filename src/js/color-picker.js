@@ -1,20 +1,23 @@
 function rgbToHsl(array){
-  const norml = array.map( e => Number( (e/255).toFixed(2) ) );
+  if(array[0] === array[1] && array[1] === array[2]){
+    const Lightness = Math.round( array[0] * 100 / 255 );
+    return [0, 0, Lightness];
+  }
+  const norml = array.map( e => e/255 );
   const red   = norml[0];
   const green = norml[1];
   const blue  = norml[2];
   
   const min = Math.min(...norml);
   const max = Math.max(...norml);
-  let Lightness = ( (min + max)/2 ).toFixed(2);
-  Lightness = Number(Lightness);
-  
+  let Lightness = (min + max)/2;
+
   let saturation = 0;
   if(Lightness <= 0.5){
     saturation = (max - min)/(max + min);
   }
   else{
-    saturation = (max - min)/(2 - max - min);  
+    saturation = (max - min)/(2 - max - min);
   }
 
   let hue = 0;
@@ -28,99 +31,58 @@ function rgbToHsl(array){
     hue = 4 + (red - green) / (max - min);
   }
   
-  hue =  Number( hue.toFixed(2) );
-  saturation =  Number( saturation.toFixed(2) );
-  Lightness  = Number( Lightness.toFixed(2) );
+  hue =  Math.round( hue * 60 );
+  saturation = Math.round(saturation * 100);
+  Lightness  = Math.round(Lightness * 100);
   
   return [hue, saturation, Lightness];
 }
 function rgbToHex(array){
-  return array.map( e => e.toString(16) );
+  return array.map( e => {
+    let hex = e.toString(16);
+    if(hex.length === 1){
+      hex = "0" + hex;
+    }
+    return hex;
+  });
 }
 /*************************************************/
 function hslToRgb(array){
-  let temp_1 = null;
-  let temp_2 = null;
-  const hue = array[0]/360;
+  const hue = array[0];
   const saturation = array[1]/100;
-  const lightness  = array[2]/100;
-  /**/
-  if(lightness >= 0.5){
-    temp_1 = (lightness + saturation) - (lightness * saturation);
-  }
-  else{
-    temp_1 = lightness * (1 + saturation);
-  }
-  temp_2 = (2 * lightness) - temp_1;
-  /**/
-  let temporary_R = hue + 0.333;
-  let temporary_G = hue;
-  let temporary_B = hue - 0.333;
-  if(temporary_R < 1){
-    temporary_R += 1;
-  }
-  else if(temporary_R > 1){
-    temporary_R -= 1
-  }
-  if(temporary_G < 1){
-    temporary_G += 1;
-  }
-  else if(temporary_G > 1){
-    temporary_G -= 1
-  }
-  if(temporary_B < 1){
-    temporary_B += 1;
-  }
-  else if(temporary_B > 1){
-    temporary_B -= 1
-  }
-  /**/
+  const lightness = array[2]/100;
+  
+  //interm. variables to help calculate the final result
+  const C = (1 - Math.abs( (2 * lightness) - 1) ) * saturation;
+  const X = C * (1 - Math.abs( (hue / 60)%2 - 1) );
+  const m = lightness - (C / 2);
+  
   let red = null;
   let green = null;
-  let blue = null;
-  /*Red*/
-  if(6 * temporary_R < 1){
-    red = temp_2 + (temp_1 - temp_2) * 6 * temporary_R;
+  let blue  = null;
+  
+  if(hue >= 0 && hue < 60){
+    [red, green, blue] = [C, X, 0];
   }
-  else if(2 * temporary_R < 1){
-    red = temp_1;
+  else if(hue >= 60 && hue < 120){
+    [red, green, blue] = [X, C, 0];
   }
-  else if(3 * temporary_R < 2){
-    red = temp_2 + (temp_1 - temp_2) * (0.666 - temporary_R) * 6;      
+  else if(hue >= 120 && hue < 180){
+    [red, green, blue] = [0, C, X];
   }
-  else{
-    red = temp_2;
+  else if(hue >= 180 && hue < 240){
+    [red, green, blue] = [0, X, C];
   }
-  /*Green*/
-  if(6 * temporary_G < 1){
-    green = temp_2 + (temp_1 - temp_2) * 6 * temporary_G;
+  else if(hue >= 240 && hue < 300){
+    [red, green, blue] = [X, 0, C];
   }
-  else if(2 * temporary_G < 1){
-    green = temp_1;
-  }
-  else if(3 * temporary_G < 2){
-    green = temp_2 + (temp_1 - temp_2) * (0.666 - temporary_G) * 6;      
-  }
-  else{
-    green = temp_2;
-  }
-  /*Blue*/
-  if(6 * temporary_B < 1){
-    blue = temp_2 + (temp_1 - temp_2) * 6 * temporary_B;
-  }
-  else if(2 * temporary_B < 1){
-    blue = temp_1;
-  }
-  else if(3 * temporary_B < 2){
-    blue = temp_2 + (temp_1 - temp_2) * (0.666 - temporary_B) * 6;      
-  }
-  else{
-    blue = temp_2;
+  else if(hue >= 300 && hue < 360){
+    [red, green, blue] = [C, 0, X];
   }
   
-  red   = Math.round( red * 255 );
-  green = Math.round( green * 255 );
-  blue  = Math.round( blue * 255 );
+  [red, green, blue] = [(red + m) * 255, (green + m) * 255, (blue + m) * 255];
+  [red, green, blue] = [red, green, blue].map( e => Math.round(e) )
+  
   
   return [red, green, blue];
 }
@@ -244,7 +206,8 @@ ColorPicker.prototype.init = function(){
     opacityCtx.fillRect(0, i, opacityCanvasWidth, 2);
   }
   this.fillSlSquare();
-  this.updateSelectedColor();
+  this.fillSelectedColorSquare();
+  this.colorCodeInput.value = this.selectedColor.hex.str;
   /***********************************************************************************/
   document.body.appendChild(this.mainBlock);
 }
@@ -302,6 +265,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       this.moveHueSlider(newHueValue);
       this.fillSlSquare();
       this.updateSelectedColor();
+      this.fillSelectedColorSquare();
     }
   });
 
@@ -313,6 +277,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     this.moveHueSlider(newHueValue);
     this.fillSlSquare();
     this.updateSelectedColor();
+    this.fillSelectedColorSquare();
   });
   /***********************************************************************************/
   //opacity slider event handler
@@ -330,6 +295,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       this.moveOpacitySlider(newOpacityValue);
       this.fillSlSquare();
       this.updateSelectedColor();
+      this.fillSelectedColorSquare();
     }
   });
 
@@ -340,6 +306,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     this.moveOpacitySlider(newOpacityValue);
     this.fillSlSquare();
     this.updateSelectedColor();
+    this.fillSelectedColorSquare();
   });
   /***********************************************************************************/
   //sl cursor event handler
@@ -357,6 +324,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     const lightness = 100 - (e.pageY - slCanvasClientRect.y)/2;
     this.moveSlCursor(saturation, lightness);
     this.updateSelectedColor();
+    this.fillSelectedColorSquare();
   });
 
   addEventListener("mouseup", () => slCanvasClicked = false );
@@ -369,6 +337,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       const lightness = 100 - (e.pageY - slCanvasClientRect.y)/2;
       this.moveSlCursor(saturation, lightness);
       this.updateSelectedColor();
+      this.fillSelectedColorSquare();
     }
   
   });
@@ -377,7 +346,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     if(e.key === "Enter"){
       this.setColorFromInput();
       this.fillSlSquare();
-      this.updateSelectedColor();
+      this.fillSelectedColorSquare();
     }
   });
   /***********************************************************************************/
@@ -392,6 +361,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       button.classList.add("selected-color-code");
       this.selectedColorCode = button.dataset.code;
       this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+
       if(this.selectedColorCode === "hex"){
         this.colorCodeInput.classList.add("hex-letter-spacing");
       }
@@ -408,7 +378,7 @@ ColorPicker.prototype.setColorFromHex = function(){
   let value = this.colorCodeInput.value;
   let colorsCodeArray = [];
   colorsCodeArray = value.match(/[0-9a-fA-F]/g);
-  if(colorsCodeArray === null || (colorsCodeArray.length < 6 && colorsCodeArray.length !== 3) ){
+  if(colorsCodeArray === null){
     colorsCodeArray = ["00", "00", "00"];
   }
   else if(colorsCodeArray.length >= 6){
@@ -416,16 +386,19 @@ ColorPicker.prototype.setColorFromHex = function(){
     for(let i = 0; i < colorsCodeArray.length/2; i++){
       colorsCodeArray[i] = colorsCodeArray[i * 2] + colorsCodeArray[ (2 * i) + 1];
     }
-    colorsCodeArray.splice(0, 3);
+    colorsCodeArray = colorsCodeArray.splice(0, 3);
   }
   else if(colorsCodeArray.length === 3){
     //duplicate each element of the array
-    colorsCodeArray.map( e => e.repeat(2) );
+    colorsCodeArray = colorsCodeArray.map( e => e.repeat(2) );
+  }
+  else{
+    colorsCodeArray = ["00", "00", "00"];
   }
   
   this.selectedColor.hex.array = colorsCodeArray.slice();
-  this.selectedColor.hex.str = "#" + colorsCodeArray.join();
-  
+  this.selectedColor.hex.str = "#" + colorsCodeArray.join("");
+
   this.selectedColor.rgba.array = hexToRgb(this.selectedColor.hex.array);
   const red = this.selectedColor.rgba.array[0];
   const green = this.selectedColor.rgba.array[1];
@@ -437,8 +410,8 @@ ColorPicker.prototype.setColorFromHex = function(){
   const hue = this.selectedColor.hsla.array[0];
   const saturation = this.selectedColor.hsla.array[1];
   const lightness  = this.selectedColor.hsla.array[2];
-  this.selectedColor.hsla.str = `rgba(${hue}, ${saturation}, ${lightness}, ${opacity})`;
-  
+  this.selectedColor.hsla.str = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
+
   this.selectedHue = hue;
   this.selectedSaturation = saturation;
   this.selectedLightness = lightness;
@@ -478,11 +451,73 @@ ColorPicker.prototype.setColorFromHsla = function(){
   if(opacity > 1){
     opacity = 1;
   }
-  this.selectedColor.hsla.str = `hsla(${hue || 0}, ${saturation}%, ${lightness}%, ${opacity })`;
-  this.selectedColor.hsla.array = hslaArray.slice();
+  
+  this.selectedColor.hsla.str = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity })`;
+  this.selectedColor.hsla.array = [hue, saturation, lightness, opacity];
+  
+  const [red, green, blue] = hslToRgb([hue, saturation, lightness]);
+  this.selectedColor.rgba.array = [red, green, blue].concat([opacity]);
+  this.selectedColor.rgba.str = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+  
+  this.selectedColor.hex.array = rgbToHex([red, green, blue]);
+  this.selectedColor.hex.str = "#" + this.selectedColor.hex.array.join("");
+  
+  this.selectedHue = hue;
+  this.selectedSaturation = saturation;
+  this.selectedLightness = lightness;
+  this.selectedOpacity = opacity;
+  
+  this.colorCodeInput.value = this.selectedColor.hsla.str;
 }
 /***********************************************************************************/
 ColorPicker.prototype.setColorFromRgba = function(){
+  let value = this.colorCodeInput.value;
+  let colorsCodeArray = [];
+  
+  for(let i = 0; i < 4; i++){
+    const match = value.match(/\d/);
+    if(match){
+      const digitIndex = match.index;
+      value = value.slice(digitIndex);
+      colorsCodeArray.push( parseFloat(value) );
+      value = value.slice(colorsCodeArray[i].toString().length);
+    }
+  }
+  
+  let red = colorsCodeArray[0] || 0;
+  let green = colorsCodeArray[1] || 0;
+  let blue  = colorsCodeArray[2] || 0;
+  let opacity = colorsCodeArray[3] || 1;
+
+  if(red > 255){
+    red = 255;
+  }
+  if(green > 255){
+    green = 100;
+  }
+  if(blue > 255){
+    blue = 255;
+  }
+  if(opacity > 1){
+    opacity = 1;
+  }
+  
+  this.selectedColor.rgba.str = `rgba(${red}, ${green}, ${blue}, ${opacity })`;
+  this.selectedColor.rgba.array = [red, green, blue, opacity];
+  console.log([red, green, blue])
+  const [hue, saturation, lightness] = rgbToHsl([red, green, blue]);
+  this.selectedColor.hsla.array = [hue, saturation, lightness].concat([opacity]);
+  this.selectedColor.hsla.str = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
+  
+  this.selectedColor.hex.array = rgbToHex([red, green, blue]);
+  this.selectedColor.hex.str = "#" + this.selectedColor.hex.array.join("");
+  
+  this.selectedHue = hue;
+  this.selectedSaturation = saturation;
+  this.selectedLightness = lightness;
+  this.selectedOpacity = opacity;
+  
+  this.colorCodeInput.value = this.selectedColor.rgba.str;
 }
 /***********************************************************************************/
 ColorPicker.prototype.setColorFromInput = function(){
@@ -490,10 +525,13 @@ ColorPicker.prototype.setColorFromInput = function(){
   if(this.selectedColorCode === "hex"){
     this.setColorFromHex();
   }
-  else{
-    
+  else if(this.selectedColorCode === "hsla"){
+    this.setColorFromHsla();
   }
-  
+  else if(this.selectedColorCode === "rgba"){
+    this.setColorFromRgba();      
+  }
+
   this.moveHueSlider(this.selectedHue);
   this.moveSlCursor(this.selectedSaturation, this.selectedLightness);
   this.moveOpacitySlider(this.selectedOpacity);
@@ -518,10 +556,23 @@ ColorPicker.prototype.fillSlSquare = function(){
   }
 }
 /***********************************************************************************/
-ColorPicker.prototype.updateSelectedColor = function(){
-  this.selectedColor.hsla.str = `hsla(${this.selectedHue}, ${this.selectedSaturation}%, ${this.selectedLightness}%, ${this.selectedOpacity})`;
-  this.colorCodeInput.value = this.selectedColor.hex.str;
+ColorPicker.prototype.fillSelectedColorSquare = function(){
   this.selectedColorSquare.style.backgroundColor = this.selectedColor.hsla.str;
+}
+/***********************************************************************************/
+ColorPicker.prototype.updateSelectedColor = function(){
+  //update hsla 
+  this.selectedColor.hsla.str = `hsla(${this.selectedHue}, ${this.selectedSaturation}%, ${this.selectedLightness}%, ${this.selectedOpacity})`;
+  this.selectedColor.hsla.array = [this.selectedHue, this.selectedSaturation, this.selectedLightness, this.selectedOpacity];
+  //update rgba
+  const [red, green, blue] = hslToRgb(this.selectedColor.hsla.array);
+  this.selectedColor.rgba.str = `rgba(${red}, ${green}, ${blue}, ${this.selectedOpacity})`;
+  this.selectedColor.rgba.array = [red, green, blue, this.selectedOpacity];
+  //update hex
+  this.selectedColor.hex.array = rgbToHex( this.selectedColor.rgba.array.slice(0, 3) );
+  this.selectedColor.hex.str = "#" + this.selectedColor.hex.array.join("");
+
+  this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
 }
 /***********************************************************************************/
 ColorPicker.prototype.show = function(){
