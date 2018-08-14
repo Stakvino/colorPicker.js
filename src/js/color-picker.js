@@ -1,3 +1,17 @@
+function round(number){
+  const integer = parseInt(number);
+  const fractional = Number( (number - integer).toFixed(2) );
+  if(fractional < 0.35){
+    return integer;
+  }
+  else if(fractional >= 0.35 && fractional <= 0.65){
+    return integer + 0.5;
+  }
+  else{
+    return integer + 1; 
+  }
+}
+
 function rgbToHsl(array){
   if(array[0] === array[1] && array[1] === array[2]){
     const Lightness = Math.round( array[0] * 100 / 255 );
@@ -10,30 +24,33 @@ function rgbToHsl(array){
   
   const min = Math.min(...norml);
   const max = Math.max(...norml);
-  let Lightness = (min + max)/2;
-
-  let saturation = 0;
-  if(Lightness <= 0.5){
-    saturation = (max - min)/(max + min);
-  }
-  else{
-    saturation = (max - min)/(2 - max - min);
-  }
+  const delta = max - min;
 
   let hue = 0;
   if(red === max){
-    hue = (green - blue) / (max - min);
+    hue = (green - blue) / delta;
+    hue %= 6;
   }
   else if(green === max){
-    hue = 2 + (blue - red) / (max - min);
+    hue = 2 + (blue - red) / delta;
   }
   else if(blue === max){
-    hue = 4 + (red - green) / (max - min);
+    hue = 4 + (red - green) / delta;
+  }
+  
+  let Lightness = (min + max)/2;
+  
+  let saturation = 0;
+  if(delta !== 0){
+    saturation = delta / (1 - Math.abs(2 * Lightness - 1) );
   }
   
   hue =  Math.round( hue * 60 );
-  saturation = Math.round(saturation * 100);
-  Lightness  = Math.round(Lightness * 100);
+  if(hue < 0){
+    hue = 360 + hue;
+  }
+  saturation = round(saturation * 100);
+  Lightness  = round(Lightness * 100);
   
   return [hue, saturation, Lightness];
 }
@@ -164,7 +181,7 @@ class ColorPicker{
        <div class="sl-cursor"></div>
       </div>
       <div class="opacity-block">
-        <canvas width="20" height="200" class="opacity-canvas"></canvas>
+        <canvas width="20" height="200" class="opacity-canvas transparent-background"></canvas>
         <div class="slider-button opacity-slider-button"></div>
       </div>
       <input type="text" spellcheck="false" class="color-code hex-letter-spacing">
@@ -342,12 +359,13 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   
   });
   /***********************************************************************************/
-  this.colorCodeInput.addEventListener("keydown", (e) => {
-    if(e.key === "Enter"){
-      this.setColorFromInput();
-      this.fillSlSquare();
-      this.fillSelectedColorSquare();
-    }
+  this.colorCodeInput.addEventListener("input", (e) => {
+    this.setColorFromInput();
+    this.fillSlSquare();
+    this.fillSelectedColorSquare();
+  });
+  this.colorCodeInput.addEventListener("input", (e) => {
+    
   });
   /***********************************************************************************/
   //choosing a conversion button will highlight it and change the value of this.selectedColorCode
@@ -369,20 +387,17 @@ ColorPicker.prototype.AttachEventHandlers = function(){
         this.colorCodeInput.classList.remove("hex-letter-spacing");
       }
     });
-    
-    button.addEventListener("focus", () => button.style.outline = "none");
   }
 }
 /***********************************************************************************/
 ColorPicker.prototype.setColorFromHex = function(){
   let value = this.colorCodeInput.value;
-  let colorsCodeArray = [];
-  colorsCodeArray = value.match(/[0-9a-fA-F]/g);
-  if(colorsCodeArray === null){
-    colorsCodeArray = ["00", "00", "00"];
+  let colorsCodeArray = value.match(/[0-9a-fA-F]/g);
+
+  if(!colorsCodeArray || ( colorsCodeArray.length !== 3 && colorsCodeArray.length !== 6) ){
+    return;
   }
-  else if(colorsCodeArray.length >= 6){
-    colorsCodeArray = colorsCodeArray.slice(0, 6);
+  else if(colorsCodeArray.length === 6){
     for(let i = 0; i < colorsCodeArray.length/2; i++){
       colorsCodeArray[i] = colorsCodeArray[i * 2] + colorsCodeArray[ (2 * i) + 1];
     }
@@ -391,9 +406,6 @@ ColorPicker.prototype.setColorFromHex = function(){
   else if(colorsCodeArray.length === 3){
     //duplicate each element of the array
     colorsCodeArray = colorsCodeArray.map( e => e.repeat(2) );
-  }
-  else{
-    colorsCodeArray = ["00", "00", "00"];
   }
   
   this.selectedColor.hex.array = colorsCodeArray.slice();
@@ -417,7 +429,6 @@ ColorPicker.prototype.setColorFromHex = function(){
   this.selectedLightness = lightness;
   this.selectedOpacity = opacity;
   
-  this.colorCodeInput.value = this.selectedColor.hex.str;
 }
 /***********************************************************************************/
 ColorPicker.prototype.setColorFromHsla = function(){
@@ -433,12 +444,12 @@ ColorPicker.prototype.setColorFromHsla = function(){
       value = value.slice(colorsCodeArray[i].toString().length);
     }
   }
-  
-  let hue = colorsCodeArray[0] || 0;
-  let saturation = colorsCodeArray[1] || 0;
-  let lightness  = colorsCodeArray[2] || 0;
-  let opacity = colorsCodeArray[3] || 1;
 
+  let hue = Math.round( colorsCodeArray[0] || 0 );
+  let saturation = round( colorsCodeArray[1] || 0 );
+  let lightness  = round( colorsCodeArray[2] || 0 );
+  let opacity = colorsCodeArray[3];
+  
   if(hue > 360){
     hue = hue%360;
   }
@@ -448,8 +459,15 @@ ColorPicker.prototype.setColorFromHsla = function(){
   if(lightness > 100){
     lightness = 100;
   }
-  if(opacity > 1){
+  if(opacity === undefined){
     opacity = 1;
+  }
+  else if(opacity < 0){
+    opacity = 0;
+  }
+  else if(opacity > 1){
+    opacity = ( opacity / Math.pow(10, opacity.toString().length) ).toPrecision(2);
+    opacity = Number(opacity);
   }
   
   this.selectedColor.hsla.str = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity })`;
@@ -467,7 +485,6 @@ ColorPicker.prototype.setColorFromHsla = function(){
   this.selectedLightness = lightness;
   this.selectedOpacity = opacity;
   
-  this.colorCodeInput.value = this.selectedColor.hsla.str;
 }
 /***********************************************************************************/
 ColorPicker.prototype.setColorFromRgba = function(){
@@ -487,7 +504,7 @@ ColorPicker.prototype.setColorFromRgba = function(){
   let red = colorsCodeArray[0] || 0;
   let green = colorsCodeArray[1] || 0;
   let blue  = colorsCodeArray[2] || 0;
-  let opacity = colorsCodeArray[3] || 1;
+  let opacity = colorsCodeArray[3];
 
   if(red > 255){
     red = 255;
@@ -498,13 +515,20 @@ ColorPicker.prototype.setColorFromRgba = function(){
   if(blue > 255){
     blue = 255;
   }
-  if(opacity > 1){
+  if(opacity === undefined){
     opacity = 1;
+  }
+  else if(opacity < 0){
+    opacity = 0;
+  }
+  else if(opacity > 1){
+    opacity = ( opacity / Math.pow(10, opacity.toString().length) ).toPrecision(2);
+    opacity = Number(opacity);
   }
   
   this.selectedColor.rgba.str = `rgba(${red}, ${green}, ${blue}, ${opacity })`;
   this.selectedColor.rgba.array = [red, green, blue, opacity];
-  console.log([red, green, blue])
+
   const [hue, saturation, lightness] = rgbToHsl([red, green, blue]);
   this.selectedColor.hsla.array = [hue, saturation, lightness].concat([opacity]);
   this.selectedColor.hsla.str = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
@@ -517,7 +541,6 @@ ColorPicker.prototype.setColorFromRgba = function(){
   this.selectedLightness = lightness;
   this.selectedOpacity = opacity;
   
-  this.colorCodeInput.value = this.selectedColor.rgba.str;
 }
 /***********************************************************************************/
 ColorPicker.prototype.setColorFromInput = function(){
@@ -540,6 +563,12 @@ ColorPicker.prototype.setColorFromInput = function(){
 /***********************************************************************************/
 /*a function that fills the sl canvas with all values from 0 to 100% of saturation and lightness using the selected hue and opacity*/
 ColorPicker.prototype.fillSlSquare = function(){
+  if(this.selectedOpacity === 0){
+    this.slCanvas.classList.add("transparent-background");
+  }
+  else{
+    this.slCanvas.classList.remove("transparent-background");
+  }
   //the size of the square that represent a single color in the sl canvas
   const pixelSize = 2;
   this.slCtx.clearRect(0, 0, this.slCanvas.width, this.slCanvas.height);

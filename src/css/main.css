@@ -1,11 +1,31 @@
 .hex-letter-spacing{
   letter-spacing: 3px;
 }
-.show{
-  display: default;
-}
 .hide{
   display: none;
+}
+#khawi{
+  width: 600px;
+  height: 600px;
+  border: black solid 1px;
+}
+.transparent-background{
+  background-image:
+    -moz-linear-gradient(45deg, #f2f2f2 25%, transparent 25%), 
+    -moz-linear-gradient(-45deg, #f2f2f2 25%, transparent 25%),
+    -moz-linear-gradient(45deg, transparent 75%, #f2f2f2 75%),
+    -moz-linear-gradient(-45deg, transparent 75%, #f2f2f2 75%);
+  background-image:
+    -webkit-gradient(linear, 0 100%, 100% 0, color-stop(.25, #f2f2f2), color-stop(.25, transparent)), 
+    -webkit-gradient(linear, 0 0, 100% 100%, color-stop(.25, #f2f2f2), color-stop(.25, transparent)),
+    -webkit-gradient(linear, 0 100%, 100% 0, color-stop(.75, transparent), color-stop(.75, #f2f2f2)),
+    -webkit-gradient(linear, 0 0, 100% 100%, color-stop(.75, transparent), color-stop(.75, #f2f2f2));
+
+  -moz-background-size:20px 20px;
+  background-size:20px 20px;
+  -webkit-background-size:20px 20px; /* override value for shitty webkit */
+
+  background-position:0 0, 50px 0, 50px -50px, 0px 50px;
 }
 div.color-picker-js{
   border: black solid 1px;
@@ -113,6 +133,12 @@ div.conversion-buttons button{
   font-size: 1em;
   padding: .2em .4em;
   border-radius: 5px;
+}
+div.conversion-buttons button::-moz-focus-inner {
+  border: 0;
+}
+div.conversion-buttons button:focus {
+  outline: none;
 }
 div.conversion-buttons button.selected-color-code{
   background-color: #4285f4;
