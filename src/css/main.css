@@ -1,38 +1,32 @@
-.hex-letter-spacing{
+.letter-spacing{
   letter-spacing: 3px;
 }
 .hide{
   display: none;
 }
-#khawi{
-  width: 600px;
-  height: 600px;
-  border: black solid 1px;
-}
 .transparent-background{
   background-image:
-    -moz-linear-gradient(45deg, #f2f2f2 25%, transparent 25%), 
-    -moz-linear-gradient(-45deg, #f2f2f2 25%, transparent 25%),
-    -moz-linear-gradient(45deg, transparent 75%, #f2f2f2 75%),
-    -moz-linear-gradient(-45deg, transparent 75%, #f2f2f2 75%);
+    -webkit-gradient(linear, 0 100%, 100% 0, color-stop(.25, #dbdbdb), color-stop(.25, transparent)), 
+    -webkit-gradient(linear, 0 0, 100% 100%, color-stop(.25, #dbdbdb), color-stop(.25, transparent)),
+    -webkit-gradient(linear, 0 100%, 100% 0, color-stop(.75, transparent), color-stop(.75, #dbdbdb)),
+    -webkit-gradient(linear, 0 0, 100% 100%, color-stop(.75, transparent), color-stop(.75, #dbdbdb));
   background-image:
-    -webkit-gradient(linear, 0 100%, 100% 0, color-stop(.25, #f2f2f2), color-stop(.25, transparent)), 
-    -webkit-gradient(linear, 0 0, 100% 100%, color-stop(.25, #f2f2f2), color-stop(.25, transparent)),
-    -webkit-gradient(linear, 0 100%, 100% 0, color-stop(.75, transparent), color-stop(.75, #f2f2f2)),
-    -webkit-gradient(linear, 0 0, 100% 100%, color-stop(.75, transparent), color-stop(.75, #f2f2f2));
+    -moz-linear-gradient(45deg, #dbdbdb 25%, transparent 25%), 
+    -moz-linear-gradient(-45deg, #dbdbdb 25%, transparent 25%),
+    -moz-linear-gradient(45deg, transparent 75%, #dbdbdb 75%),
+    -moz-linear-gradient(-45deg, transparent 75%, #dbdbdb 75%);
 
   -moz-background-size:20px 20px;
   background-size:20px 20px;
-  -webkit-background-size:20px 20px; /* override value for shitty webkit */
+  -webkit-background-size:20px 20px; 
 
   background-position:0 0, 50px 0, 50px -50px, 0px 50px;
 }
 div.color-picker-js{
+  min-height: 520px;
   border: black solid 1px;
   background-color: #4285f4;
   position: absolute;
-  top: 50px;
-  left: 100px;
 }
 div.close-block{
   padding: 8px 0;
@@ -74,13 +68,25 @@ div.hue-slider-button{
   top: -3px;
   left: -13px;
 }
+div.selected-colors-block{
+  width: 50px;
+  height: 200px;
+  display: inline-block;
+  margin-left: 10px;
+  border: black solid 1px;
+  border-radius: 5px;
+}
+div.selected-color,
+div.last-selected-color{
+  width: 50px;
+  height: 100px;
+}
 div.sl-block{
   display: inline-block;
-  margin-left: 20px;
+  margin-left: 30px;
   width: 202px;
   height: 202px;
   position: relative;
-  
   overflow: hidden;
 }
 div.sl-cursor{
@@ -99,7 +105,7 @@ div.opacity-block{
   display: inline-block;
   width: 32px;
   height: 202px;
-  margin-left: 70px;
+  margin-left: 30px;
   position: relative;
 }
 div.opacity-slider-button{
@@ -112,22 +118,13 @@ input.color-code{
   width: 230px;
   font-size: 1em;
   margin-top: 25px;
-  margin-left: 20px;
+  margin-left: 10px;
   padding: .2em;
   display: block;
 }
-div.selected-color{
-  width: 50px;
-  height: 50px;
-  border: black solid 1px;
-  border-radius: 5px;
-  display: inline-block;
-  position: absolute;
-  left: 340px;
-  top: 350px;
-}
 div.conversion-buttons{
-  margin: 15px 0 0 20px;
+  margin: 15px 0 0 10px;
+  width: 230px;
 }
 div.conversion-buttons button{
   font-size: 1em;
@@ -152,12 +149,12 @@ div.conversion-buttons button:hover{
   cursor: pointer;
 }
 div.cancel-select{
-  margin: 2.5em 0 .5em 0;
+  margin: 2.5em 0 .5em 210px;
 }
 div.cancel-select button{
   font-size: 1.1em;
   padding: .1em .4em;
 }
 div.cancel-select button.cancel-but{
-  margin: 0 10px 0 210px;
+  margin-right: 10px;
 }
