@@ -23,10 +23,10 @@
   background-position:0 0, 50px 0, 50px -50px, 0px 50px;
 }
 div.color-picker-js{
-  min-height: 520px;
   border: black solid 1px;
   background-color: #4285f4;
   position: absolute;
+  top: 50;
 }
 div.close-block{
   padding: 8px 0;
