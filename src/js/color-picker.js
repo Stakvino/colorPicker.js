@@ -1,3 +1,12 @@
+const round = require('./lib/helper.js');
+const colorConversion = require('./lib/color-conversion.js');
+const rgbToHsl = colorConversion.rgbToHsl;
+const rgbToHex = colorConversion.rgbToHex;
+const hslToRgb = colorConversion.hslToRgb;
+const hslToHex = colorConversion.hslToHex;
+const hexToRgb = colorConversion.hexToRgb;
+const hexToHsl = colorConversion.hexToHsl;
+
 class ColorPicker{
   constructor(){
     this.DOM = this.create();
