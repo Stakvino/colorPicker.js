@@ -1,0 +1,25 @@
+@keyframes flash {
+  from {opacity: 1;}
+  to {opacity: 0;}
+}
+
+.flash-animation{
+  animation-name : flash;
+  animation-duration : .2s;
+  animation-delay : 0;
+  animation-iteration-count : 3;
+}
+
+div.blocks-container{
+  display: flex;
+  margin-top: 40px;
+  margin-left: 40px;
+}
+div.block{
+  margin-right: 50px;
+}
+div.color-block{
+  width: 200px;
+  height: 200px;
+  border: black solid 1px;
+}

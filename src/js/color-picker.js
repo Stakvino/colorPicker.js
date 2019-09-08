@@ -1,51 +1,57 @@
-const round = require('./lib/helper.js');
+const helper = require('./lib/helper.js');
+const round = helper.round;
+const throttled = helper.throttled;
+
 const colorConversion = require('./lib/color-conversion.js');
-const rgbToHsl = colorConversion.rgbToHsl;
-const rgbToHex = colorConversion.rgbToHex;
 const hslToRgb = colorConversion.hslToRgb;
 const hslToHex = colorConversion.hslToHex;
+
+/*
+const rgbToHsl = colorConversion.rgbToHsl;
+const rgbToHex = colorConversion.rgbToHex;
 const hexToRgb = colorConversion.hexToRgb;
 const hexToHsl = colorConversion.hexToHsl;
+*/
 
 class ColorPicker{
   constructor(){
     this.DOM = this.create();
-    this.closeButton  = this.DOM.getElementsByClassName("close-but")[0];
-    this.cancelButton = this.DOM.getElementsByClassName("cancel-but")[0];
-    this.selectButton = this.DOM.getElementsByClassName("select-but")[0];
+    this.closeButton  = this.DOM.querySelector("button.close-but");
+    this.cancelButton = this.DOM.querySelector("button.cancel-but");
+    this.selectButton = this.DOM.querySelector("button.select-but");
     /*********************************************************************************/
-    this.hueCanvas = this.DOM.getElementsByClassName("hue-canvas")[0];
-    this.hueSliderBut = this.DOM.getElementsByClassName("hue-slider-button")[0];
-    this.opacityCanvas = this.DOM.getElementsByClassName("opacity-canvas")[0];
-    this.opacitySliderBut = this.DOM.getElementsByClassName("opacity-slider-button")[0];
-    this.slCanvas = this.DOM.getElementsByClassName("sl-canvas")[0];
-    this.slCursor = this.DOM.getElementsByClassName("sl-cursor")[0];
+    this.hueCanvas = this.DOM.querySelector("canvas.hue-canvas");
+    this.hueSliderBut = this.DOM.querySelector("div.hue-slider-button");
+    this.opacityCanvas = this.DOM.querySelector("canvas.opacity-canvas");
+    this.opacitySliderBut = this.DOM.querySelector("div.opacity-slider-button");
+    this.slCanvas = this.DOM.querySelector("canvas.sl-canvas");
+    this.slCursor = this.DOM.querySelector("div.sl-cursor");
     this.slCtx    = this.slCanvas.getContext("2d");
     /*********************************************************************************/
-    this.lastSelectedColorSquare = this.DOM.getElementsByClassName("last-selected-color")[0];
-    this.selectedColorSquare = this.DOM.getElementsByClassName("selected-color")[0];
-    this.colorCodeInput = this.DOM.getElementsByClassName("color-code")[0];
+    this.lastSelectedColorSquare = this.DOM.querySelector("div.last-selected-color");
+    this.selectedColorSquare = this.DOM.querySelector("div.selected-color");
+    this.colorCodeInput = this.DOM.querySelector("input.color-code");
     
-    this.lastSelectedColor = `hsla(0, 0%, 0%, 1)`;
+    this.lastSelectedColor = `hsla(360, 100%, 100%, 1)`;
     this.selectedColor = {
       hsla : {
-        str   : `hsla(0, 0%, 0%, 1)`,
-        array : [0, 0, 0, 1]
+        str   : `hsla(360, 100%, 100%, 1)`,
+        array : [360, 100, 100, 1]
       },
       rgba : {
-        str   : `rgba(0, 0, 0, 1)`,
-        array : [0, 0, 0, 1]
+        str   : `rgba(255, 255, 255, 1)`,
+        array : [255, 255, 255, 1]
       },
       hex  : {
-        str   : `#000000`,
-        array : ["00", "00", "00"]
+        str   : `#ffffff`,
+        array : ["ff", "ff", "ff"]
       }
     };
     this.selectedColorCode = "hex";
     /*********************************************************************************/
-    this.selectedHue = 0;
-    this.selectedSaturation = 0;
-    this.selectedLightness = 0;
+    this.selectedHue = 360;
+    this.selectedSaturation = 100;
+    this.selectedLightness = 100;
     this.selectedOpacity = 1;
     /*********************************************************************************/
     this.inputCallbacks  = [];
@@ -53,6 +59,17 @@ class ColorPicker{
     /*********************************************************************************/
     this.init();
     this.AttachEventHandlers();
+  }
+  
+  //shortcuts to avoid nested objects in this.selectedColor
+  get selectedHex(){
+    return this.selectedColor.hex.str;
+  }
+  get selectedRgba(){
+    return this.selectedColor.rgba.str;
+  }
+  get selectedHsla(){
+    return this.selectedColor.hsla.str;
   }
   
   get halfSliderSize(){
@@ -103,10 +120,9 @@ ColorPicker.prototype.create = function(){
 
   return colorPicker;
 }
-
+/*********************************************************************************/
 //initialise the color picker canvas by drawing all values of hue, opacity and saturation/lightness
 ColorPicker.prototype.init = function(){
-  
   const hueCtx = this.hueCanvas.getContext("2d");
   const hueCanvasWidth  = this.hueCanvas.width;
   const hueCanvasHeight = this.hueCanvas.height;
@@ -115,7 +131,7 @@ ColorPicker.prototype.init = function(){
     hueCtx.fillStyle = `hsl(${i},100%,50%)`;
     hueCtx.fillRect(i, 0, 1, hueCanvasHeight);
   }
-  /***********************************************************************************/
+  /*********************************/
   const opacityCtx = this.opacityCanvas.getContext("2d");
   const opacityCanvasWidth  = this.opacityCanvas.width;
   const opacityCanvasHeight = this.opacityCanvas.height;
@@ -124,50 +140,26 @@ ColorPicker.prototype.init = function(){
     opacityCtx.fillStyle = `rgba(0,0,0,${i/opacityCanvasHeight})`;
     opacityCtx.fillRect(0, i, opacityCanvasWidth, 2);
   }
-  this.fillSlSquare();
   this.fillLastSelectedColorSquare();
-  this.fillSelectedColorSquare();
   this.colorCodeInput.value = this.selectedColor.hex.str;
-  /***********************************************************************************/
+  this.fillSlSquare();
+  this.fillSelectedColorSquare();
+  /**********************************/
   document.body.appendChild(this.DOM);
+  //initial position of the color picker
   const left = innerWidth/2 - 250;
   this.DOM.style.left = `${left}px`;
 }
-
+/*********************************************************************************/
+const throttled_delay = 60;
 ColorPicker.prototype.AttachEventHandlers = function(){
   //close, cancel and select button hide the color picker
   this.closeButton.addEventListener("click", () => {
-    const hslaArray = this.lastSelectedColor.split(",").map(e => parseFloat( e.slice(e.match(/\d/).index) ) );
-    
-    if (this.selectedColor.hsla.str !== this.lastSelectedColor) {
-      //return the last selected value because the user didn't select a new one
-      this.changeState("hsla", hslaArray);
-      for(const callback of this.changeCallbacks){
-        callback();
-      }
-    }
-    else{
-      this.changeState("hsla", hslaArray);
-    }
     this.hide();
-    this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
   });
   
   this.cancelButton.addEventListener("click", () => {
-    const hslaArray = this.lastSelectedColor.split(",").map(e => parseFloat( e.slice(e.match(/\d/).index) ) );
-    
-    if (this.selectedColor.hsla.str !== this.lastSelectedColor) {
-      //return the last selected value because the user didn't select a new one
-      this.changeState("hsla", hslaArray);
-      for(const callback of this.changeCallbacks){
-        callback();
-      }
-    }
-    else{
-      this.changeState("hsla", hslaArray);
-    }
     this.hide();
-    this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
   });
   
   this.selectButton.addEventListener("click", () => {
@@ -181,11 +173,11 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     this.hide();
   });
   /***********************************************************************************/
+  /*allow user to drag the color picker and change his position on the page by holding mouse left click on the color picker and moving the mouse*/
   let mouseLastPosition = {x : null, y : null};
-  
   let mainBlockClicked = false;
-  const closeBlock   = this.DOM.getElementsByClassName("close-block")[0];
-  const mainBlock   = this.DOM.getElementsByClassName("main-block")[0];
+  const closeBlock   = this.DOM.querySelector("div.close-block");
+  const mainBlock   = this.DOM.querySelector("div.main-block");
   //drag color picker to change his position in the page
   this.DOM.addEventListener( "mousedown", (e) => {
     if (e.target === closeBlock || e.target === mainBlock) {
@@ -197,20 +189,21 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   });
   addEventListener( "mouseup", () => mainBlockClicked = false );
 
-  addEventListener("mousemove", (e) => {
-    if(mainBlockClicked){
-      const distanceMoved = {
-        x : e.pageX - (mouseLastPosition.x || e.pageX),
-        y : e.pageY - (mouseLastPosition.y || e.pageY)
-      };
+  addEventListener("mousemove",throttled(throttled_delay, e => {
+      if(mainBlockClicked){
+        const distanceMoved = {
+          x : e.pageX - (mouseLastPosition.x || e.pageX),
+          y : e.pageY - (mouseLastPosition.y || e.pageY)
+        };
 
-      this.DOM.style.left = `${this.DOM.offsetLeft + distanceMoved.x}px`;
-      this.DOM.style.top  = `${this.DOM.offsetTop + distanceMoved.y}px`;
+        this.DOM.style.left = `${this.DOM.offsetLeft + distanceMoved.x}px`;
+        this.DOM.style.top  = `${this.DOM.offsetTop + distanceMoved.y}px`;
 
-      mouseLastPosition.x = e.pageX;
-      mouseLastPosition.y = e.pageY;
-    }
-  });
+        mouseLastPosition.x = e.pageX;
+        mouseLastPosition.y = e.pageY;
+      }
+    })
+  );
   /***********************************************************************************/
   //hue slider event handler
   let hueSliderClicked = false;
@@ -221,15 +214,21 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   });
   addEventListener( "mouseup",() => hueSliderClicked = false );
 
-  addEventListener("mousemove", (e) => {
-    if(hueSliderClicked){
-      const hueCanvasPosition = this.hueCanvas.getClientRects()[0].left;
-      const newHueValue = e.pageX - hueCanvasPosition - window.scrollX;
-      const colorArray = [newHueValue, this.selectedSaturation, this.selectedLightness, this.selectedOpacity];
-      this.changeState("hsla", colorArray);
-      this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
-    }
-  });
+  addEventListener("mousemove",throttled(throttled_delay, e => {
+      if(hueSliderClicked){
+        const hueCanvasPosition = this.hueCanvas.getClientRects()[0].left;
+        const newHueValue = e.pageX - hueCanvasPosition - window.scrollX;
+        const colorArray = [newHueValue, this.selectedSaturation, this.selectedLightness, this.selectedOpacity];
+        this.changeState("hsla", colorArray);
+        this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+
+        //Execute input callbacks
+        for(const callback of this.inputCallbacks){
+          callback();
+        }
+      }
+    }) 
+  );
 
   this.hueCanvas.addEventListener("mousedown", (e) => {
     e.preventDefault();
@@ -239,6 +238,11 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     const colorArray = [newHueValue, this.selectedSaturation, this.selectedLightness, this.selectedOpacity];
     this.changeState("hsla", colorArray);
     this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+
+    //Execute input callbacks
+    for(const callback of this.inputCallbacks){
+      callback();
+    }
   });
   /***********************************************************************************/
   //opacity slider event handler
@@ -250,15 +254,21 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   });
   addEventListener( "mouseup",() => opacitySliderClicked = false );
 
-  addEventListener("mousemove", (e) => {
-    if(opacitySliderClicked){
-      const newOpacityValue = (e.pageY - this.opacityCanvas.getClientRects()[0].top - window.scrollY)/200;
-      this.moveOpacitySlider(newOpacityValue);
-      const colorArray = [this.selectedHue, this.selectedSaturation, this.selectedLightness, newOpacityValue];
-      this.changeState("hsla", colorArray);
-      this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
-    }
-  });
+  addEventListener("mousemove", throttled(throttled_delay, e => {
+      if(opacitySliderClicked){
+        const newOpacityValue = (e.pageY - this.opacityCanvas.getClientRects()[0].top - window.scrollY)/200;
+        this.moveOpacitySlider(newOpacityValue);
+        const colorArray = [this.selectedHue, this.selectedSaturation, this.selectedLightness, newOpacityValue];
+        this.changeState("hsla", colorArray);
+        this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+
+        //Execute input callbacks
+        for(const callback of this.inputCallbacks){
+          callback();
+        }
+      }
+    })
+  );
 
   this.opacityCanvas.addEventListener("mousedown", (e) => {
     e.preventDefault();
@@ -267,6 +277,11 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     const colorArray = [this.selectedHue, this.selectedSaturation, this.selectedLightness, newOpacityValue];
     this.changeState("hsla", colorArray);
     this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+
+    //Execute input callbacks
+    for(const callback of this.inputCallbacks){
+      callback();
+    }
   });
   /***********************************************************************************/
   //sl cursor event handler
@@ -285,22 +300,30 @@ ColorPicker.prototype.AttachEventHandlers = function(){
     const colorArray = [this.selectedHue, saturation, lightness, this.selectedOpacity];
     this.changeState("hsla", colorArray);
     this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
-  });
 
-  addEventListener("mouseup", () => slCanvasClicked = false );
-
-  addEventListener("mousemove", (e) => {
-    if(slCursorClicked){
-      //change cursor position in sl canvas
-      const slCanvasClientRect = this.slCanvas.getClientRects()[0];
-      const saturation = (e.pageX - slCanvasClientRect.x - window.scrollX)/2;
-      const lightness = 100 - (e.pageY - slCanvasClientRect.y - window.scrollY)/2;
-      const colorArray = [this.selectedHue, saturation, lightness, this.selectedOpacity];
-      this.changeState("hsla", colorArray);
-      this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+    //Execute input callbacks
+    for(const callback of this.inputCallbacks){
+      callback();
     }
-  
   });
+
+  addEventListener("mousemove", throttled(throttled_delay, e => {
+      if(slCursorClicked){
+        //change cursor position in sl canvas
+        const slCanvasClientRect = this.slCanvas.getClientRects()[0];
+        const saturation = (e.pageX - slCanvasClientRect.x - window.scrollX)/2;
+        const lightness = 100 - (e.pageY - slCanvasClientRect.y - window.scrollY)/2;
+        const colorArray = [this.selectedHue, saturation, lightness, this.selectedOpacity];
+        this.changeState("hsla", colorArray);
+        this.colorCodeInput.value = this.selectedColor[this.selectedColorCode].str;
+        //Execute input callbacks
+        for(const callback of this.inputCallbacks){
+          callback();
+        }
+      }
+    
+    })
+  );
   /***********************************************************************************/
   this.colorCodeInput.addEventListener("input", () => {
     let colorArray = [];
@@ -324,7 +347,7 @@ ColorPicker.prototype.AttachEventHandlers = function(){
   });
   /***********************************************************************************/
   //choosing a conversion button will highlight it and change the value of this.selectedColorCode
-  const conversionButtons = Array.from( this.DOM.getElementsByClassName("conversion-buttons")[0].children );
+  const conversionButtons = Array.from( this.DOM.querySelector("div.conversion-buttons").children );
   
   for(let i = 0; i < conversionButtons.length; i++){
     const currentSelected = conversionButtons[i];
@@ -343,13 +366,6 @@ ColorPicker.prototype.AttachEventHandlers = function(){
       }
     });
   }
-}
-/***********************************************************************************/
-ColorPicker.prototype.changeHslaParam = function(hue, saturation, lightness, opacity){
-  this.selectedHue = hue;
-  this.selectedSaturation = saturation;
-  this.selectedLightness = lightness;
-  this.selectedOpacity = opacity;
 }
 /***********************************************************************************/
 ColorPicker.prototype.onInput = function(callback){
@@ -492,7 +508,7 @@ ColorPicker.prototype.getColorFromRgba = function(){
   return [red, green, blue, opacity];
 }
 /***********************************************************************************/
-/*Fill the sl canvas with all values from 0 to 100% of saturation and lightness using the selected hue and opacity*/
+/*fill the sl canvas with all values from 0 to 100% of saturation and lightness using the selected hue and opacity*/
 ColorPicker.prototype.fillSlSquare = function(){
   if(this.selectedOpacity === 0){
     this.slCanvas.classList.add("transparent-background");
@@ -534,39 +550,43 @@ ColorPicker.prototype.fillSelectedColorSquare = function(){
     this.selectedColorSquare.classList.remove("transparent-background");
   }
   this.selectedColorSquare.style.backgroundColor = this.selectedColor.hsla.str;
-  for(const callback of this.inputCallbacks){
-    callback();
-  }
 }
 /***********************************************************************************/
 ColorPicker.prototype.changeState = function(colorCode, colorArray){
-  let hexArray  = [];
-  let rgbArray = [];
-  let hslArray = [];
-  
-  if(colorCode === "hex"){
-    if(colorArray === undefined){
-      return;
+  if(colorArray === undefined){
+    return;
+  }
+  colorArray = colorArray.map(e => {
+    if(e < 0){
+      return 0;
+    }else{
+      return e;
     }
-    hexArray  = colorArray.slice();
-    rgbArray = hexToRgb(hexArray);
-    hslArray = hexToHsl(hexArray);
-    colorArray.push(this.selectedOpacity);
-  }
-  else if(colorCode === "rgba"){
-    rgbArray = colorArray.slice(0, 3);
-    hexArray = rgbToHex(rgbArray);
-    hslArray = rgbToHsl(rgbArray);
-  }
-  else if(colorCode === "hsla"){
-    hslArray = colorArray.slice(0, 3);
-    hexArray  = hslToHex(hslArray);
-    rgbArray = hslToRgb(hslArray);
-  }
+  });
   
-  const opacity  = colorArray[colorArray.length - 1];
+  
+  let [hue, saturation, lightness, opacity] = colorArray;
+  
+  if(hue > 360){
+    hue = 360;
+  }
+  if(saturation > 100){
+    saturation = 100;
+  }
+  if(lightness > 100){
+    lightness = 100;
+  }
+  if(opacity > 1){
+    opacity = 1;
+  }
+
+  colorArray = [hue, saturation, lightness, opacity];
+
+  const hslArray = colorArray.slice(0, 3);
+  const hexArray  = hslToHex(hslArray);
+  const rgbArray = hslToRgb(hslArray);
+
   //update hsla
-  const [hue, saturation, lightness] = hslArray;
   this.selectedColor.hsla.str = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
   this.selectedColor.hsla.array = [hue, saturation, lightness, opacity];
   //update rgba
@@ -644,19 +664,3 @@ ColorPicker.prototype.moveSlCursor = function(saturation, lightness){
 }
 /***********************************************************************************/
 
-const chooseColorBut = document.getElementById("choose_color");
-const colorPicker = new ColorPicker();
-chooseColorBut.addEventListener("click", () => {
-  colorPicker.show();
-});
-colorPicker.onInput(function(){
-  chooseColorBut.style.color = colorPicker.selectedColor.hsla.str;
-});
-colorPicker.onChange(function(){
-  document.body.style.backgroundColor = colorPicker.selectedColor.hsla.str;
-});
-
-const input = document.querySelector(`input[type="color"]`);
-input.addEventListener("change", () =>{
-  console.log(input.value);
-});

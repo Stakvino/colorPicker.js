@@ -1,3 +1,6 @@
+const helper = require('./lib/helper.js');
+const round = helper.round;
+
 function rgbToHsl(array){
   if(array[0] === array[1] && array[1] === array[2]){
     const Lightness = Math.round( array[0] * 100 / 255 );
