@@ -2,16 +2,16 @@
 
 A simple and easy to use color picker made with javascript.
 
-##Demo
+## Demo
 
 See **demo** at [live demo](https://stakvino.github.io/colorpicker/)
-<img src="images/color-picker-domo.gif" />
+![alt text](https://raw.githubusercontent.com/Stakvino/colorPickerJs/master/images/color-picker-demo.gif)
 
-##Integration
+## Integration
 
 You can easily integrate this color picker by putting the color-picker-min.js and color-picker-min.css (availble in dist folder) in your project.
 
-```javascript
+```html
 <link rel="stylesheet" href="color-picker-min.css">
 ...
 <script src="color-picker-min-export.js"></script>
@@ -27,7 +27,7 @@ You can easily integrate this color picker by putting the color-picker-min.js an
 ```
 
 or you can use es6 modules to import the file color-picker-min-export.js
-```javascript
+```html
 <link rel="stylesheet" href="color-picker-min.css">
 ...
 <script type="module" src="color-picker-min-export.js"></script>
@@ -36,32 +36,45 @@ or you can use es6 modules to import the file color-picker-min-export.js
 </script>
 ```
 
-##Usage
+## Usage
 
+Create and show a color picker 
 ```javascript
 const colorPicker = new ColorPicker(); //create a color picker
 colorPicker.show(); //show the color picker
+```
 
-//Get the currently selected color from colorPicker as a string 
+Get the currently selected color from colorPicker as a string 
+```javascript
 colorPicker.selectedHex; //#ffffff
 colorPicker.selectedRgba; //rgba(255, 255, 255, 1)
 colorPicker.selectedHsla; //hsla(360, 100%, 100%, 1)
+```
 
-//Add event handlers for the color picker
+Add event handlers for the color picker
+```javascript
 callback = () => console.log(colorPicker.selectedHex);
 
-colorPicker.onInput(callback); //Callback will be executed whenever user change the color value
+//Callback will be executed whenever user change the color value
+colorPicker.onInput(callback); 
 
-colorPicker.onSelect(callback); //Callback will be executed whenever user click on select button
+//Callback will be executed whenever user click on select button
+colorPicker.onSelect(callback); 
 
-colorPicker.onChange(callback); //Callback will be executed whenever user change color and click on any button that hides the color picker (select, close, cancel).
+//Callback will be executed whenever user change color and click on any button that hides the color picker.
+colorPicker.onChange(callback); 
 
-colorPicker.onCancel(callback); //Callback will be executed whenever user click on cancel button
+//Callback will be executed whenever user click on cancel button
+colorPicker.onCancel(callback); 
 
-colorPicker.onClose(callback); //Callback will be executed whenever user click on close button
+//Callback will be executed whenever user click on close button
+colorPicker.onClose(callback); 
+```
 
-//You can remove an event handeler by using methods with the same names prefixed with remove like so :
-colorPicker.removeOnInput(callback); //Will remove callback from input event handlers stack
+You can remove an event handeler by using methods with the same names prefixed by "remove" like so :
+```javascript
+//Will remove callback from input event handlers stack
+colorPicker.removeOnInput(callback); 
 ```
 
 
