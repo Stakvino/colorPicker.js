@@ -5,6 +5,8 @@ A simple and easy to use color picker made with javascript.
 ## Demo
 
 See **demo** at [live demo](https://stakvino.github.io/colorpicker/)
+
+
 ![alt text](https://raw.githubusercontent.com/Stakvino/colorPickerJs/master/images/color-picker-demo.gif)
 
 ## Integration
@@ -53,21 +55,22 @@ colorPicker.selectedHsla; //hsla(360, 100%, 100%, 1)
 
 Add event handlers for the color picker
 ```javascript
+//Create a callback function
 callback = () => console.log(colorPicker.selectedHex);
 
 //Callback will be executed whenever user change the color value
 colorPicker.onInput(callback); 
 
-//Callback will be executed whenever user click on select button
+//Callback will be executed whenever user clicks on select button
 colorPicker.onSelect(callback); 
 
-//Callback will be executed whenever user change color and click on any button that hides the color picker.
+//Callback will be executed whenever user changes color and clicks on select, close or cancel.
 colorPicker.onChange(callback); 
 
-//Callback will be executed whenever user click on cancel button
+//Callback will be executed whenever user clicks on cancel button
 colorPicker.onCancel(callback); 
 
-//Callback will be executed whenever user click on close button
+//Callback will be executed whenever user clicks on close button
 colorPicker.onClose(callback); 
 ```
 
